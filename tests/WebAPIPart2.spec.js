@@ -11,9 +11,17 @@ test.beforeAll(async ({ browser }) => {
     await page.locator("#userEmail").fill("rahulshettyw@gmail.com");
     await page.locator("#userPassword").fill("Learning@830$3mK3");
     await page.locator("[value='Login']").click();
-    await page.waitForLoadState('networkidle');
-    await context.storageState({ path: 'state.json' });
-    webContext = await browser.newContext({ storageState: 'state.json' });
+    await expect(page.locator("[routerlink*='cart']")).toBeVisible();
+
+await context.storageState({
+    path: 'state.json'
+});
+
+await context.close();
+
+webContext = await browser.newContext({
+    storageState: 'state.json'
+});
 
 
 
@@ -26,6 +34,7 @@ test('@Client App login', async () => {
     const productName = 'ZARA COAT 3';
     const page = await webContext.newPage();
     await page.goto("https://rahulshettyacademy.com/client");
+    await page.locator(".card-body b").first().waitFor();
     const products = page.locator(".card-body");
     const titles = await page.locator(".card-body b").allTextContents();
     console.log(titles);
@@ -34,13 +43,23 @@ test('@Client App login', async () => {
         if (await products.nth(i).locator("b").textContent() === productName) {
             //add to cart
             await products.nth(i).locator("text= Add To Cart").click();
-            break;
+
+// Wait until the toast appears
+await page.locator("#toast-container").waitFor();
+
+// Wait until loading animation disappears
+await page.locator(".ng-animating").last().waitFor({ state: "hidden" });
+
+break;
         }
     }
-    await page.locator("[routerlink*='cart']").click();
+    const cart = page.locator("[routerlink*='cart']");
+    await expect(cart).toBeVisible();
+    await cart.click();
     await page.locator("div li").first().waitFor();
     const bool = await page.locator("h3:has-text('ZARA COAT 3')").isVisible();
     expect(bool).toBeTruthy();
+    await expect(page.locator("text=Checkout")).toBeVisible();
     await page.locator("text=Checkout").click();
     await page.locator("[placeholder*='Country']").pressSequentially("ind")
     const dropdown = page.locator(".ta-results");
@@ -81,7 +100,7 @@ test('@API Test case 2', async () => {
     const productName = 'ZARA COAT 3';
     const page = await webContext.newPage();
     await page.goto("https://rahulshettyacademy.com/client");
-    await page.waitForLoadState('networkidle');
+    await expect(page.locator("[routerlink*='cart']")).toBeVisible();
     const products = page.locator(".card-body");
     const titles = await page.locator(".card-body b").allTextContents();
     console.log(titles);
